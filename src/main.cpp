@@ -18,8 +18,7 @@ RFM69 radio;
 bool promiscuousMode = false; //set to 'true' to sniff all packets on the same network
 byte ackCount = 0;
 
-typedef struct
-{
+typedef struct {
     uint16_t ID;
     int pwm2; //store this nodeId
     int pwm1;
@@ -89,11 +88,13 @@ void loop() {
     if (radio.receiveDone()) {
         show_debug_data();
 
-        if (radio.DATALEN != sizeof(Payload))
+        if (radio.DATALEN != sizeof(Payload)) {
             Serial.print("Invalid payload received, not matching Payload struct!");
-        else
-        {
+        }
+        else  {
             theData = *(Payload *)radio.DATA; //assume radio.DATA actually contains our struct and not something else
+            Serial.print("\t M1_PWM = ");
+            Serial.print(abs(theData.pwm1));
         }
         ping();
         blink(LED, 3);
