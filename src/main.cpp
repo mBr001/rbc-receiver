@@ -26,13 +26,6 @@ typedef struct
 } Payload;
 Payload theData;
 
-void blink(byte PIN, int DELAY_MS) {
-    pinMode(PIN, OUTPUT);
-    digitalWrite(PIN, HIGH);
-    delay(DELAY_MS);
-    digitalWrite(PIN, LOW);
-}
-
 void setup() {
     Serial.begin(SERIAL_BAUD);
     delay(10);
@@ -45,6 +38,13 @@ void setup() {
     char buff[50];
     sprintf(buff, "\nListening at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
     Serial.println(buff);
+}
+
+void blink(byte PIN, int DELAY_MS) {
+    pinMode(PIN, OUTPUT);
+    digitalWrite(PIN, HIGH);
+    delay(DELAY_MS);
+    digitalWrite(PIN, LOW);
 }
 
 void ping() {
@@ -67,24 +67,27 @@ void ping() {
                 Serial.print("nothing");
         }
     }
+    Serial.println();
+}
+
+void show_debug_data() {
+    Serial.print("[SENDER:");
+    Serial.print(radio.SENDERID, DEC);
+    Serial.print("] ");
+    Serial.print(" [RX_RSSI:");
+    Serial.print(radio.readRSSI());
+    Serial.print("]");
+    if (promiscuousMode) {
+        Serial.print("to [");
+        Serial.print(radio.TARGETID, DEC);
+        Serial.print("] ");
+    }
 }
 
 void loop() {
     //process any serial input
-    if (radio.receiveDone())
-    {
-        Serial.print('[');
-        Serial.print(radio.SENDERID, DEC);
-        Serial.print("] ");
-        Serial.print(" [RX_RSSI:");
-        Serial.print(radio.readRSSI());
-        Serial.print("]");
-        if (promiscuousMode)
-        {
-            Serial.print("to [");
-            Serial.print(radio.TARGETID, DEC);
-            Serial.print("] ");
-        }
+    if (radio.receiveDone()) {
+        show_debug_data();
 
         if (radio.DATALEN != sizeof(Payload))
             Serial.print("Invalid payload received, not matching Payload struct!");
@@ -93,7 +96,6 @@ void loop() {
             theData = *(Payload *)radio.DATA; //assume radio.DATA actually contains our struct and not something else
         }
         ping();
-        Serial.println();
         blink(LED, 3);
     }
 }
