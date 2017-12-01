@@ -1,25 +1,13 @@
 #include <RFM69.h>
 #include <SPI.h>
+#include <defines.h>
 #include <vector>
 // #include <SPIFlash.h>
 
-// disables or enables printing to serial
-#define print(var) Serial.print(var)
-// #define print(var)
-
-#define NODEID 1
-#define NETWORKID 100
-#define FREQUENCY RF69_868MHZ  // Match this with the version of your Moteino! (others: RF69_433MHZ, RF69_868MHZ)
-#define KEY "sampleEncryptKey" // has to be same 16 characters/bytes on all nodes, not more not less!
-#define LED 13
-#define SERIAL_BAUD 57600
-#define ACK_TIME 50 // # of ms to wait for an ack
-//#define IS_RFM69HW_HCW  //uncomment only for RFM69HW/HCW! Leave out if you have RFM69W/CW!
 using namespace std;
 RFM69 radio;
 
 // SPIFlash flash(8, 0xEF30); //EF40 for 16mbit windbond chip
-bool promiscuousMode = false; // set to 'true' to sniff all packets on the same network
 byte ackCount = 0;
 
 byte data[61];
@@ -33,7 +21,7 @@ void setup() {
   radio.setHighPower(); // must include this only for RFM69HW/HCW!
 #endif
   radio.encrypt(KEY);
-  radio.promiscuous(promiscuousMode);
+  radio.promiscuous(PROMISCUOUS_MODE);
   char buff[50];
   sprintf(buff, "\nListening at %d Mhz...", FREQUENCY == RF69_433MHZ ? 433 : FREQUENCY == RF69_868MHZ ? 868 : 915);
   Serial.println(buff);
@@ -76,7 +64,7 @@ void show_debug_data() {
   print(" [RX_RSSI:");
   print(radio.readRSSI());
   print("]");
-  if (promiscuousMode) {
+  if (PROMISCUOUS_MODE) {
     print("to [");
     print(radio.TARGETID);
     print("] ");
