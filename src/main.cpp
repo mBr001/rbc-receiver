@@ -17,12 +17,7 @@ RFM69 radio;
 // SPIFlash flash(8, 0xEF30); //EF40 for 16mbit windbond chip
 bool promiscuousMode = false; // set to 'true' to sniff all packets on the same network
 byte ackCount = 0;
-// vector<byte> data;
-typedef struct {
-  uint16_t nodeId;
-  byte data[255];
-} Payload;
-Payload payload;
+
 byte data[255];
 void setup() {
   Serial.begin(SERIAL_BAUD);
@@ -86,19 +81,17 @@ void loop() {
   // process any serial input
   if (radio.receiveDone()) {
     show_debug_data();
-
-    // if (radio.DATALEN != sizeof(data)) {
-    //   Serial.print("Invalid payload received!");
-    // } else {
+    Serial.print(radio.DATALEN);
+    if (radio.DATALEN != sizeof(data)) {
+      Serial.print("Invalid payload received!\n");
+    } else {
 
       for (int i = 0; i < radio.DATALEN; i++) { // loop through all the new bytes
         data[i] = radio.DATA[i];
         Serial.write(data[i]);
       }
-
-    //   Serial.write(data, sizeof(data));
       ping();
       blink(LED, 3);
     }
   }
-// }
+}
