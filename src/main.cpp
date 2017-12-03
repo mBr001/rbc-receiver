@@ -1,17 +1,27 @@
 #include <RFM69.h>
+#include <RbC_Motors.h>
 #include <SPI.h>
 #include <defines.h>
+#include <pinout.h>
 #include <vector>
 // #include <SPIFlash.h>
 
 using namespace std;
 RFM69 radio;
-
+Motor motor;
+Robot robot;
 // SPIFlash flash(8, 0xEF30); //EF40 for 16mbit windbond chip
 byte ackCount = 0;
 
 byte data[61];
 vector<byte> received;
+
+typedef struct {
+  uint16_t ID;
+  int pwm2; // store this nodeId
+  int pwm1;
+} Payload;
+Payload theData;
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
@@ -75,13 +85,43 @@ void loop() {
   // process any serial input
   if (radio.receiveDone()) {
     show_debug_data();
-     for (int i = 0; i < radio.DATALEN; i++) { // loop through all the new bytes
-      // data[i] = radio.DATA[i];
-      // Serial.println();
-      // print(" ");
-      // print(radio.DATA[i]);
-      Serial.write(radio.DATA[i]);
+    if (radio.DATALEN == 6) {
+      theData = *(Payload *)radio.DATA;
+      print(" M1_DIR = ");
+      if (theData.pwm1 < 0) {
+        print(motor.Set_Direction_motor1(BACKWARD));
+      } else if (theData.pwm1 > 0) {
+        print(motor.Set_Direction_motor1(FORWARD));
+      } else {
+        print(motor.Set_Direction_motor1(STOP));
+      }
+      print(" M1_DIR = ");
+      if (theData.pwm2 < 0) {
+        print(motor.Set_Direction_motor2(BACKWARD));
+      } else if (theData.pwm2 > 0) {
+        print(motor.Set_Direction_motor2(FORWARD));
+      } else {
+        print(motor.Set_Direction_motor2(STOP));
+      }
+
+      print("\t M1_PWM = ");
+      print(motor.Set_PWM1(abs(theData.pwm1)));
+      print("\t M2_PWM = ");
+      print(motor.Set_PWM2(abs(theData.pwm2)));
+      motor.Write_Directions();
+      motor.Write_PWM1();
+      motor.Write_PWM2();
+
+    } else {
+      for (int i = 0; i < radio.DATALEN; i++) { // loop through all the new bytes
+        // data[i] = radio.DATA[i];
+        // Serial.println();
+        // print(" ");
+        // print(radio.DATA[i]);
+        Serial.write(radio.DATA[i]);
+      }
     }
+
     ping();
     blink(LED, 3);
   }
