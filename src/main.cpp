@@ -15,6 +15,8 @@ byte ackCount = 0;
 
 byte data[61];
 vector<byte> received;
+boolean is_complete_frame = false;
+byte manipulator_data[61];
 
 typedef struct {
   uint16_t ID;
@@ -24,6 +26,7 @@ typedef struct {
 Payload theData;
 
 void setup() {
+  Default_Init_Pin_2_0();
   Serial.begin(SERIAL_BAUD);
   delay(10);
   radio.initialize(FREQUENCY, NODEID, NETWORKID);
@@ -81,6 +84,28 @@ void show_debug_data() {
   }
 }
 
+void slice61(byte platform_data[], vector<byte> received, int i) {
+  vector<byte>::const_iterator first = received.begin() + 61 * i;
+  vector<byte>::const_iterator last = first + 61;
+  copy(first, last, platform_data);
+}
+
+void clear_data(byte data[], uint8_t data_size) { memset(&data[0], 0, data_size); }
+
+void send(byte data[], uint8_t data_size) {
+  print("Sending (");
+  print(data_size);
+  print(" bytes) ... ");
+  print(data[0]);
+  if (radio.sendWithRetry(GATEWAYID, (const void *)(data), data_size)) {
+    print(" ok!\n");
+  } else {
+    print(" nothing...\n");
+  }
+
+  blink(LED, 3);
+}
+
 void loop() {
   // process any serial input
   if (radio.receiveDone()) {
@@ -124,5 +149,27 @@ void loop() {
 
     ping();
     blink(LED, 3);
+  }
+
+  if (is_complete_frame) {
+    int nr_packets_to_send = (int)ceil(received.size() / 61.0);
+    for (int i = 0; i < nr_packets_to_send; i++) {
+      slice61(manipulator_data, received, i);
+      send(manipulator_data, sizeof(manipulator_data));
+      clear_data(manipulator_data, sizeof(manipulator_data));
+    }
+    is_complete_frame = false;
+    received.clear();
+  }
+}
+
+void serialEvent() {
+  while (Serial.available()) {
+    byte incoming_byte = Serial.read();
+    received.push_back(incoming_byte);
+    // Serial.println(received[i], HEX);
+    if (incoming_byte == 0x0A) {
+      is_complete_frame = true;
+    }
   }
 }

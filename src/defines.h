@@ -8,6 +8,7 @@
 
 #define NODEID 1
 #define NETWORKID 100
+#define GATEWAYID 2
 #define FREQUENCY RF69_868MHZ  // Match this with the version of your Moteino! (others: RF69_433MHZ, RF69_868MHZ)
 #define KEY "sampleEncryptKey" // has to be same 16 characters/bytes on all nodes, not more not less!
 #define LED 13
